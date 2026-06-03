@@ -15,6 +15,14 @@ SourceHarvest is not an archive. Logspine stores, dedupes, indexes, searches, re
 go build -o bin/sourceharvest ./cmd/sourceharvest
 ```
 
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/solomonneas/sourceharvest/master/install.sh | sh
+```
+
+Or download a release binary and verify it with `checksums.txt`.
+
 ## Usage
 
 Export generic JSONL records:
@@ -26,10 +34,20 @@ sourceharvest jsonl testdata/generic.fixture.jsonl \
   --out -
 ```
 
+Export a Markdown directory as local note evidence:
+
+```bash
+sourceharvest markdown ./notes \
+  --source notes \
+  --collection notes:local \
+  --out -
+```
+
 Pipe into Logspine:
 
 ```bash
 sourceharvest jsonl export.jsonl --source notes --collection notes:local --out - | spine import adapter -
+sourceharvest markdown ./notes --source notes --collection notes:local --out - | spine import adapter -
 ```
 
 ## Boundary

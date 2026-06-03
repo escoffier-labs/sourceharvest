@@ -35,6 +35,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "markdown":
+		if err := runMarkdown(args[1:], stdout, stderr); err != nil {
+			fmt.Fprintln(stderr, "error:", err)
+			return 1
+		}
+		return 0
 	default:
 		fmt.Fprintln(stderr, "error: unknown command", args[0])
 		return 1
@@ -46,7 +52,62 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintln(w, "  sourceharvest jsonl <path-or-dir> --source KIND --collection ID --out <file|-> [--collection-kind KIND] [--limit N] [--json]")
+	fmt.Fprintln(w, "  sourceharvest markdown <path-or-dir> --source KIND --collection ID --out <file|-> [--collection-kind KIND] [--limit N] [--json]")
 	fmt.Fprintln(w, "  sourceharvest version")
+}
+
+func runMarkdown(args []string, stdout, stderr io.Writer) error {
+	fs := flag.NewFlagSet("markdown", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	sourceKind := fs.String("source", "", "source kind")
+	collectionID := fs.String("collection", "", "collection external ID")
+	collectionKind := fs.String("collection-kind", "notes", "collection kind")
+	outPath := fs.String("out", "-", "output file or - for stdout")
+	limit := fs.Int("limit", 0, "maximum records to emit")
+	jsonSummary := fs.Bool("json", false, "write summary JSON after export")
+	path, flagArgs, err := splitPathAndFlags(args)
+	if err != nil {
+		return err
+	}
+	if err := fs.Parse(flagArgs); err != nil {
+		return err
+	}
+	if path == "" || len(fs.Args()) != 0 {
+		return errors.New("usage: sourceharvest markdown <path-or-dir> --source KIND --collection ID --out <file|->")
+	}
+	if strings.TrimSpace(*sourceKind) == "" || strings.TrimSpace(*collectionID) == "" {
+		return errors.New("--source and --collection are required")
+	}
+	var out io.Writer = stdout
+	var file *os.File
+	if *outPath != "-" {
+		if err := os.MkdirAll(filepath.Dir(*outPath), 0o755); err != nil && filepath.Dir(*outPath) != "." {
+			return err
+		}
+		f, err := os.Create(*outPath)
+		if err != nil {
+			return err
+		}
+		file = f
+		out = f
+	}
+	result, err := exportMarkdown(path, *sourceKind, *collectionID, *collectionKind, *limit, out)
+	if file != nil {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}
+	if err != nil {
+		return err
+	}
+	if *jsonSummary {
+		target := stdout
+		if *outPath == "-" {
+			target = stderr
+		}
+		return writeJSON(target, result)
+	}
+	return nil
 }
 
 func runJSONL(args []string, stdout, stderr io.Writer) error {
@@ -177,6 +238,100 @@ func exportJSONL(root, sourceKind, collectionID, collectionKind string, limit in
 	return summary, nil
 }
 
+func exportMarkdown(root, sourceKind, collectionID, collectionKind string, limit int, w io.Writer) (Summary, error) {
+	files, err := listMarkdown(root)
+	if err != nil {
+		return Summary{}, err
+	}
+	summary := Summary{
+		Source:      sourceKind,
+		Path:        root,
+		Files:       len(files),
+		Warnings:    []string{},
+		GeneratedAt: time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	for _, file := range files {
+		if limit > 0 && summary.Records >= limit {
+			break
+		}
+		b, err := os.ReadFile(file)
+		if err != nil {
+			summary.Warnings = append(summary.Warnings, fmt.Sprintf("%s: %s", file, err))
+			continue
+		}
+		text := strings.TrimSpace(string(b))
+		if text == "" {
+			summary.Warnings = append(summary.Warnings, fmt.Sprintf("%s: empty markdown file", file))
+			continue
+		}
+		info, err := os.Stat(file)
+		if err != nil {
+			summary.Warnings = append(summary.Warnings, fmt.Sprintf("%s: %s", file, err))
+			continue
+		}
+		hash := hashBytes(b)
+		rec := markdownRecord(file, text, hash, info.ModTime().UTC().Format(time.RFC3339Nano), sourceKind, collectionID, collectionKind)
+		if err := writeRecord(w, rec); err != nil {
+			return summary, err
+		}
+		summary.Records++
+	}
+	return summary, nil
+}
+
+func markdownRecord(path, text, hash, createdAt, sourceKind, collectionID, collectionKind string) adapter.Record {
+	title := markdownTitle(path, text)
+	externalID := sourceKind + ":markdown:" + stableID(path, hash)
+	return adapter.Record{
+		Schema: adapter.SchemaV1,
+		Source: adapter.Source{Kind: sourceKind, Name: sourceKind},
+		Collection: adapter.Collection{
+			ExternalID: collectionID,
+			Kind:       collectionKind,
+			Name:       collectionID,
+			Metadata:   metadata(map[string]any{"source": sourceKind}),
+		},
+		Item: adapter.Item{
+			ExternalID: externalID,
+			Kind:       "note",
+			CreatedAt:  createdAt,
+			Text:       text,
+			Tags:       []string{sourceKind, "markdown"},
+			Metadata:   metadata(map[string]any{"source": sourceKind, "file_path": path, "title": title}),
+		},
+		Actor: &adapter.Actor{
+			ExternalID: sourceKind + ":system:markdown",
+			Type:       "system",
+			Name:       "Markdown",
+		},
+		Artifacts: []adapter.Artifact{{
+			ExternalID: stableID(externalID, path),
+			Kind:       "file",
+			Path:       path,
+			MimeType:   "text/markdown",
+			Hash:       "sha256:" + hash,
+			Metadata:   metadata(map[string]any{"title": title}),
+		}},
+		Links:     []adapter.Link{},
+		Relations: []adapter.Relation{},
+		Raw: adapter.RawRef{
+			Format: "text/markdown",
+			Hash:   "sha256:" + hash,
+			Path:   path,
+		},
+	}
+}
+
+func markdownTitle(path, text string) string {
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "#") {
+			return strings.TrimSpace(strings.TrimLeft(line, "#"))
+		}
+	}
+	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+}
+
 func normalize(path string, ordinal int64, line []byte, obj map[string]any, sourceKind, collectionID, collectionKind string) (adapter.Record, string) {
 	text := firstString(obj, "text", "content", "message", "body", "title", "summary")
 	if text == "" {
@@ -273,6 +428,42 @@ func listJSONL(root string) ([]string, error) {
 		}
 		name := strings.ToLower(filepath.Base(path))
 		if strings.HasSuffix(name, ".jsonl") && !strings.Contains(name, ".bak") && !strings.Contains(name, "backup") {
+			files = append(files, path)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	sort.Strings(files)
+	return files, nil
+}
+
+func listMarkdown(root string) ([]string, error) {
+	info, err := os.Stat(root)
+	if err != nil {
+		return nil, err
+	}
+	var files []string
+	if !info.IsDir() {
+		name := strings.ToLower(root)
+		if strings.HasSuffix(name, ".md") || strings.HasSuffix(name, ".markdown") {
+			return []string{root}, nil
+		}
+		return nil, fmt.Errorf("%s is not a Markdown file", root)
+	}
+	if err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			name := strings.ToLower(d.Name())
+			if name == ".git" || name == "node_modules" || name == "backup" || name == "backups" || name == "deleted" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		name := strings.ToLower(filepath.Base(path))
+		if (strings.HasSuffix(name, ".md") || strings.HasSuffix(name, ".markdown")) && !strings.Contains(name, ".bak") && !strings.Contains(name, "backup") {
 			files = append(files, path)
 		}
 		return nil

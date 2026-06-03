@@ -38,6 +38,35 @@ func TestJSONLExportsAdapterRecords(t *testing.T) {
 	}
 }
 
+func TestMarkdownExportsAdapterRecords(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"markdown", fixturePath("notes"), "--source", "notes", "--collection", "notes:local", "--out", "-", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit %d stderr=%s", code, stderr.String())
+	}
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	if len(lines) != 1 {
+		t.Fatalf("records = %d, want 1: %s", len(lines), stdout.String())
+	}
+	rec, err := adapter.Parse([]byte(lines[0]))
+	if err != nil {
+		t.Fatalf("invalid adapter record: %v\n%s", err, lines[0])
+	}
+	if rec.Source.Kind != "notes" || rec.Item.Kind != "note" || rec.Raw.Format != "text/markdown" {
+		t.Fatalf("unexpected markdown record: %#v", rec)
+	}
+	if len(rec.Artifacts) != 1 || rec.Artifacts[0].Kind != "file" {
+		t.Fatalf("markdown artifact missing: %#v", rec.Artifacts)
+	}
+	var summary Summary
+	if err := json.Unmarshal(stderr.Bytes(), &summary); err != nil {
+		t.Fatalf("invalid summary: %v\n%s", err, stderr.String())
+	}
+	if summary.Records != 1 || summary.Files != 1 {
+		t.Fatalf("bad summary: %#v", summary)
+	}
+}
+
 func TestVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"version"}, &stdout, &stderr)
