@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/solomonneas/sourceharvest/internal/app"
+	"github.com/escoffier-labs/sourceharvest/internal/app"
 )
 
 func main() {

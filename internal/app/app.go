@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/solomonneas/sourceharvest/internal/adapter"
+	"github.com/escoffier-labs/sourceharvest/internal/adapter"
 )
 
 const Version = "0.1.1"

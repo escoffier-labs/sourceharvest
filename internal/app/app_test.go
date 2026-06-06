@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/solomonneas/sourceharvest/internal/adapter"
+	"github.com/escoffier-labs/sourceharvest/internal/adapter"
 )
 
 func TestJSONLExportsAdapterRecords(t *testing.T) {

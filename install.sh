@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo="solomonneas/sourceharvest"
+repo="escoffier-labs/sourceharvest"
 version="${SOURCEHARVEST_VERSION:-latest}"
 bindir="${BINDIR:-$HOME/.local/bin}"
 

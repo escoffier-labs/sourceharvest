@@ -33,7 +33,7 @@
   <text x="74" y="338" class="small">telecrawl: Telegram</text>
 
   <rect x="48" y="406" width="236" height="82" class="box agent"/>
-  <text x="166" y="438" text-anchor="middle" class="label">AgentTrail</text>
+  <text x="166" y="438" text-anchor="middle" class="label">StationTrail</text>
   <text x="166" y="462" text-anchor="middle" class="small">agent-session logs only</text>
 
   <rect x="368" y="112" width="230" height="116" class="box bridge"/>

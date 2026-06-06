@@ -2,11 +2,11 @@
 
 SourceHarvest exports source-system records to `logspine.adapter.v1` JSONL.
 
-It is the sibling tool to AgentTrail:
+It is the sibling tool to StationTrail:
 
-- [AgentTrail](https://github.com/solomonneas/agenttrail) handles local agent-session harnesses such as Codex, Claude, OpenClaw, OpenCode, and Hermes.
+- [StationTrail](https://github.com/escoffier-labs/stationtrail) handles local agent-session harnesses such as Codex, Claude, OpenClaw, OpenCode, and Hermes.
 - SourceHarvest handles non-harness source systems such as crawler exports, notes, chat exports, issue exports, and future domain-specific harvesters.
-- [Logspine](https://github.com/solomonneas/logspine) stores, dedupes, indexes, searches, relates, and emits evidence bundles.
+- [Logspine](https://github.com/escoffier-labs/logspine) stores, dedupes, indexes, searches, relates, and emits evidence bundles.
 
 SourceHarvest is not an archive.
 
@@ -68,12 +68,12 @@ SourceHarvest follows the same path for each source:
 5. Emit one `logspine.adapter.v1` JSON object per line.
 6. Optionally emit JSON summaries with record counts, file counts, warnings, and generated timestamps.
 
-## With Logspine And AgentTrail
+## With Logspine And StationTrail
 
 ```mermaid
 flowchart TB
     SOURCEHARVEST["<b>SourceHarvest</b><br/><i>non-agent source adapters</i>"]
-    AGENTTRAIL["<b>AgentTrail</b><br/><i>agent-session adapters</i>"]
+    STATIONTRAIL["<b>StationTrail</b><br/><i>agent-session adapters</i>"]
     LOGSPINE["<b>Logspine</b><br/>durable evidence store"]
 
     subgraph CRAWLERS [" local crawler exports "]
@@ -93,7 +93,7 @@ flowchart TB
 
     CRAWLERS & LOCAL --> SOURCEHARVEST
     SOURCEHARVEST == logspine.adapter.v1 JSONL ==> LOGSPINE
-    AGENTTRAIL == logspine.adapter.v1 JSONL ==> LOGSPINE
+    STATIONTRAIL == logspine.adapter.v1 JSONL ==> LOGSPINE
 
     subgraph LOGSPINE_SURFACES [" Logspine surfaces "]
         STORE["<b>Store</b><br/>dedupe · index · relate"]
@@ -115,16 +115,16 @@ flowchart TB
     classDef store fill:#fff7ed,stroke:#ea580c,color:#7c2d12;
     classDef guard fill:#fee2e2,stroke:#ef4444,color:#7f1d1d;
     class DISCRAWL,GITCRAWL,GRAINCRAWL,NOTCRAWL,SLACRAWL,TELECRAWL,NOTES,EXPORTS,REPO source;
-    class SOURCEHARVEST,AGENTTRAIL adapter;
+    class SOURCEHARVEST,STATIONTRAIL adapter;
     class LOGSPINE,STORE,BUNDLES,SEARCH store;
     class BOUNDARY guard;
 ```
 
-SourceHarvest is the non-agent source adapter layer. AgentTrail is the agent-session adapter layer. Logspine is the durable evidence layer.
+SourceHarvest is the non-agent source adapter layer. StationTrail is the agent-session adapter layer. Logspine is the durable evidence layer.
 
 ```bash
 sourceharvest markdown ./notes --source notes --collection notes:local --out - | spine import adapter -
-agenttrail all --out - --redact safe | spine import adapter -
+stationtrail all --out - --redact safe | spine import adapter -
 ```
 
 When `sourceharvest` is installed on `PATH`, Logspine can run it directly:
@@ -134,11 +134,11 @@ spine import sourceharvest markdown ./notes --source notes --collection notes:lo
 spine import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
 ```
 
-For agent-session logs, use AgentTrail instead of SourceHarvest:
+For agent-session logs, use StationTrail instead of SourceHarvest:
 
 ```bash
-spine import agenttrail codex ~/.codex/sessions --json
-spine import agenttrail hermes ~/.hermes/sessions --json
+spine import stationtrail codex ~/.codex/sessions --json
+spine import stationtrail hermes ~/.hermes/sessions --json
 ```
 
 ## Crawler Stack Boundary
@@ -168,7 +168,7 @@ go test ./...
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/solomonneas/sourceharvest/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/escoffier-labs/sourceharvest/master/install.sh | sh
 ```
 
 Or download a release binary and verify it with `checksums.txt`.
