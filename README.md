@@ -1,12 +1,12 @@
 # SourceHarvest
 
-SourceHarvest exports source-system records to `logspine.adapter.v1` JSONL.
+SourceHarvest exports source-system records to `miseledger.adapter.v1` JSONL.
 
 It is the sibling tool to StationTrail:
 
 - [StationTrail](https://github.com/escoffier-labs/stationtrail) handles local agent-session harnesses such as Codex, Claude, OpenClaw, OpenCode, and Hermes.
 - SourceHarvest handles non-harness source systems such as crawler exports, notes, chat exports, issue exports, and future domain-specific harvesters.
-- [Logspine](https://github.com/escoffier-labs/logspine) stores, dedupes, indexes, searches, relates, and emits evidence bundles.
+- [MiseLedger](https://github.com/escoffier-labs/miseledger) stores, dedupes, indexes, searches, relates, and emits evidence bundles.
 
 SourceHarvest is not an archive.
 
@@ -15,7 +15,7 @@ SourceHarvest is not an archive.
 ```mermaid
 flowchart TB
     SOURCEHARVEST["<b>SourceHarvest CLI</b><br/><i>local adapter layer</i>"]
-    ADAPTER["<b>logspine.adapter.v1 JSONL</b><br/>one normalized object per line"]
+    ADAPTER["<b>miseledger.adapter.v1 JSONL</b><br/>one normalized object per line"]
 
     subgraph INPUTS [" local source inputs "]
         JSONL["<b>Generic JSONL</b><br/>already line-oriented records"]
@@ -65,16 +65,16 @@ SourceHarvest follows the same path for each source:
 2. Select the command-specific reader for that input shape.
 3. Normalize records into stable collections, items, actors, artifacts, links, relations, and raw references.
 4. Apply `--limit` and source-specific filters.
-5. Emit one `logspine.adapter.v1` JSON object per line.
+5. Emit one `miseledger.adapter.v1` JSON object per line.
 6. Optionally emit JSON summaries with record counts, file counts, warnings, and generated timestamps.
 
-## With Logspine And StationTrail
+## With MiseLedger And StationTrail
 
 ```mermaid
 flowchart TB
     SOURCEHARVEST["<b>SourceHarvest</b><br/><i>non-agent source adapters</i>"]
     STATIONTRAIL["<b>StationTrail</b><br/><i>agent-session adapters</i>"]
-    LOGSPINE["<b>Logspine</b><br/>durable evidence store"]
+    MISELEDGER["<b>MiseLedger</b><br/>durable evidence store"]
 
     subgraph CRAWLERS [" local crawler exports "]
         DISCRAWL["<b>discrawl</b><br/>Discord archives"]
@@ -92,18 +92,18 @@ flowchart TB
     end
 
     CRAWLERS & LOCAL --> SOURCEHARVEST
-    SOURCEHARVEST == logspine.adapter.v1 JSONL ==> LOGSPINE
-    STATIONTRAIL == logspine.adapter.v1 JSONL ==> LOGSPINE
+    SOURCEHARVEST == miseledger.adapter.v1 JSONL ==> MISELEDGER
+    STATIONTRAIL == miseledger.adapter.v1 JSONL ==> MISELEDGER
 
-    subgraph LOGSPINE_SURFACES [" Logspine surfaces "]
+    subgraph MISELEDGER_SURFACES [" MiseLedger surfaces "]
         STORE["<b>Store</b><br/>dedupe · index · relate"]
         BUNDLES["<b>Evidence bundles</b><br/>reviewable outputs"]
         SEARCH["<b>Search</b><br/>queries across imported evidence"]
     end
 
-    LOGSPINE --> STORE
-    LOGSPINE --> BUNDLES
-    LOGSPINE --> SEARCH
+    MISELEDGER --> STORE
+    MISELEDGER --> BUNDLES
+    MISELEDGER --> SEARCH
 
     BOUNDARY["<b>Project boundary</b><br/>SourceHarvest reads local exports and does not crawl live services"]
     CRAWLERS -. already exported .-> BOUNDARY
@@ -116,34 +116,34 @@ flowchart TB
     classDef guard fill:#fee2e2,stroke:#ef4444,color:#7f1d1d;
     class DISCRAWL,GITCRAWL,GRAINCRAWL,NOTCRAWL,SLACRAWL,TELECRAWL,NOTES,EXPORTS,REPO source;
     class SOURCEHARVEST,STATIONTRAIL adapter;
-    class LOGSPINE,STORE,BUNDLES,SEARCH store;
+    class MISELEDGER,STORE,BUNDLES,SEARCH store;
     class BOUNDARY guard;
 ```
 
-SourceHarvest is the non-agent source adapter layer. StationTrail is the agent-session adapter layer. Logspine is the durable evidence layer.
+SourceHarvest is the non-agent source adapter layer. StationTrail is the agent-session adapter layer. MiseLedger is the durable evidence layer.
 
 ```bash
-sourceharvest markdown ./notes --source notes --collection notes:local --out - | spine import adapter -
-stationtrail all --out - --redact safe | spine import adapter -
+sourceharvest markdown ./notes --source notes --collection notes:local --out - | miseledger import adapter -
+stationtrail all --out - --redact safe | miseledger import adapter -
 ```
 
-When `sourceharvest` is installed on `PATH`, Logspine can run it directly:
+When `sourceharvest` is installed on `PATH`, MiseLedger can run it directly:
 
 ```bash
-spine import sourceharvest markdown ./notes --source notes --collection notes:local --json
-spine import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
+miseledger import sourceharvest markdown ./notes --source notes --collection notes:local --json
+miseledger import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
 ```
 
 For agent-session logs, use StationTrail instead of SourceHarvest:
 
 ```bash
-spine import stationtrail codex ~/.codex/sessions --json
-spine import stationtrail hermes ~/.hermes/sessions --json
+miseledger import stationtrail codex ~/.codex/sessions --json
+miseledger import stationtrail hermes ~/.hermes/sessions --json
 ```
 
 ## Crawler Stack Boundary
 
-SourceHarvest is the right home for adapters that read local crawler outputs and turn them into `logspine.adapter.v1` JSONL. It should not perform live service crawling itself.
+SourceHarvest is the right home for adapters that read local crawler outputs and turn them into `miseledger.adapter.v1` JSONL. It should not perform live service crawling itself.
 
 Current crawler families to support through local adapters:
 
@@ -219,18 +219,18 @@ sourceharvest json export.json \
   --out -
 ```
 
-Pipe into Logspine:
+Pipe into MiseLedger:
 
 ```bash
-sourceharvest jsonl export.jsonl --source notes --collection notes:local --out - | spine import adapter -
-sourceharvest markdown ./notes --source notes --collection notes:local --out - | spine import adapter -
+sourceharvest jsonl export.jsonl --source notes --collection notes:local --out - | miseledger import adapter -
+sourceharvest markdown ./notes --source notes --collection notes:local --out - | miseledger import adapter -
 ```
 
-Or let Logspine run SourceHarvest when `sourceharvest` is installed on `PATH`:
+Or let MiseLedger run SourceHarvest when `sourceharvest` is installed on `PATH`:
 
 ```bash
-spine import sourceharvest markdown ./notes --source notes --collection notes:local --json
-spine import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
+miseledger import sourceharvest markdown ./notes --source notes --collection notes:local --json
+miseledger import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
 ```
 
 ## Boundary

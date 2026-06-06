@@ -75,7 +75,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 }
 
 func printHelp(w io.Writer) {
-	fmt.Fprintln(w, "sourceharvest exports local source-system records to logspine.adapter.v1 JSONL.")
+	fmt.Fprintln(w, "sourceharvest exports local source-system records to miseledger.adapter.v1 JSONL.")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintln(w, "  sourceharvest jsonl <path-or-dir> --source KIND --collection ID --out <file|-> [--collection-kind KIND] [--limit N] [--json]")

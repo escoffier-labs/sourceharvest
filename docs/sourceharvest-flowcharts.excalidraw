@@ -281,13 +281,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "Adapter JSONL\nlogspine.adapter.v1",
+      "text": "Adapter JSONL\nmiseledger.adapter.v1",
       "fontSize": 16,
       "fontFamily": 1,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Adapter JSONL\nlogspine.adapter.v1",
+      "originalText": "Adapter JSONL\nmiseledger.adapter.v1",
       "lineHeight": 1.25,
       "baseline": 37
     },
@@ -517,7 +517,7 @@
       "baseline": 37
     },
     {
-      "id": "sh-stack-logspine",
+      "id": "sh-stack-miseledger",
       "type": "rectangle",
       "x": 926,
       "y": 730,
@@ -544,7 +544,7 @@
       "locked": false
     },
     {
-      "id": "sh-stack-logspine-text",
+      "id": "sh-stack-miseledger-text",
       "type": "text",
       "x": 962,
       "y": 758,
@@ -569,13 +569,13 @@
       "updated": 1,
       "link": null,
       "locked": false,
-      "text": "Logspine\narchive\nsearch\nevidence",
+      "text": "MiseLedger\narchive\nsearch\nevidence",
       "fontSize": 16,
       "fontFamily": 1,
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Logspine\narchive\nsearch\nevidence",
+      "originalText": "MiseLedger\narchive\nsearch\nevidence",
       "lineHeight": 1.25,
       "baseline": 77
     },
