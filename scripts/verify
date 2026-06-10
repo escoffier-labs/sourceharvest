@@ -1,0 +1,10 @@
+#!/bin/bash
+# Single verification entrypoint. CI (.github/workflows/ci.yml) and AGENTS.md
+# both defer to this file, so the gate lives in exactly one place.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+go test ./...
+go vet ./...
+go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+go build -o bin/sourceharvest ./cmd/sourceharvest
