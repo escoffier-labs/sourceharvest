@@ -687,6 +687,29 @@ func TestGitLogReaderRespectsLimit(t *testing.T) {
 	}
 }
 
+// TestGitLogReaderExplicitZeroLimitIsUnlimited verifies that an explicit
+// --limit 0 means unlimited, consistent with the other readers, rather than
+// silently capping at the 200-commit default.
+func TestGitLogReaderExplicitZeroLimitIsUnlimited(t *testing.T) {
+	dir := t.TempDir()
+	runGit(t, dir, "init")
+	runGit(t, dir, "config", "user.email", "author.invalid")
+	runGit(t, dir, "config", "user.name", "Jane Maintainer")
+	const commits = 5
+	for i := 0; i < commits; i++ {
+		if err := os.WriteFile(filepath.Join(dir, "f.txt"), []byte{byte('0' + i)}, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		runGit(t, dir, "add", ".")
+		runGit(t, dir, "commit", "-m", "commit")
+	}
+	recs, _ := runReader(t, "gitlog", dir,
+		"--source", "gitlog", "--collection", "repo:test", "--limit", "0", "--out", "-", "--json")
+	if len(recs) != commits {
+		t.Fatalf("records = %d, want %d with --limit 0 (unlimited)", len(recs), commits)
+	}
+}
+
 func TestInvalidLimitSurfacesError(t *testing.T) {
 	dir := t.TempDir()
 	runGit(t, dir, "init")

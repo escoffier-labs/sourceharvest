@@ -19,12 +19,14 @@ jobs:
       - name: Build
         run: |
           mkdir -p dist
+          version="$(git describe --tags --always)"
+          ldflags="-X github.com/escoffier-labs/sourceharvest/internal/app.Version=${version}"
           for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
             goos="${target%/*}"
             goarch="${target#*/}"
             suffix=""
             if [ "$goos" = "windows" ]; then suffix=".exe"; fi
-            GOOS="$goos" GOARCH="$goarch" go build -o "dist/sourceharvest-${goos}-${goarch}${suffix}" ./cmd/sourceharvest
+            GOOS="$goos" GOARCH="$goarch" go build -ldflags "$ldflags" -o "dist/sourceharvest-${goos}-${goarch}${suffix}" ./cmd/sourceharvest
           done
           (cd dist && sha256sum * > checksums.txt)
       - name: Publish release

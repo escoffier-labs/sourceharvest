@@ -21,7 +21,13 @@ import (
 	"github.com/escoffier-labs/sourceharvest/internal/adapter"
 )
 
-const Version = "0.1.1"
+// Version is the CLI version. It defaults to "dev" for local and unversioned
+// builds and is overridden at build time via the linker, for example:
+//
+//	go build -ldflags "-X github.com/escoffier-labs/sourceharvest/internal/app.Version=$(git describe --tags --always)" ./cmd/sourceharvest
+//
+// It must remain a var (not a const) so -ldflags -X can set it.
+var Version = "dev"
 
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" || args[0] == "help" {
@@ -159,7 +165,7 @@ func runGitLog(args []string, stdout, stderr io.Writer) error {
 		return err
 	}
 	return withOutput(opts.OutPath, stdout, stderr, opts.JSONSummary, func(w io.Writer) (Summary, error) {
-		return exportGitLog(opts.Path, opts.SourceKind, opts.CollectionID, opts.CollectionKind, opts.Limit, w)
+		return exportGitLog(opts.Path, opts.SourceKind, opts.CollectionID, opts.CollectionKind, opts.Limit, opts.LimitSet, w)
 	})
 }
 
@@ -199,6 +205,7 @@ type commonExportOptions struct {
 	CollectionKind string
 	OutPath        string
 	Limit          int
+	LimitSet       bool
 	JSONSummary    bool
 }
 
@@ -237,6 +244,11 @@ func (o *commonExportOptions) Validate(usage string) error {
 	o.OutPath = *o.outPath
 	o.JSONSummary = *o.jsonSummary
 	o.Limit = *o.limit
+	o.FlagSet.Visit(func(f *flag.Flag) {
+		if f.Name == "limit" {
+			o.LimitSet = true
+		}
+	})
 	if o.Path == "" || len(o.FlagSet.Args()) != 0 {
 		return errors.New("usage: " + usage)
 	}
@@ -567,8 +579,11 @@ type gitChangedFile struct {
 	Path   string `json:"path"`
 }
 
-func exportGitLog(repo, sourceKind, collectionID, collectionKind string, limit int, w io.Writer) (Summary, error) {
-	if limit <= 0 {
+func exportGitLog(repo, sourceKind, collectionID, collectionKind string, limit int, limitSet bool, w io.Writer) (Summary, error) {
+	// Consistent with the other readers, an explicit --limit 0 (or any
+	// non-positive value) means unlimited. The 200-commit cap is only a sane
+	// default applied when the user did not pass --limit at all.
+	if !limitSet {
 		limit = 200
 	}
 	// Field delimiter \x1f separates the metadata fields; record delimiter \x1e
@@ -576,8 +591,14 @@ func exportGitLog(repo, sourceKind, collectionID, collectionKind string, limit i
 	// multi-line bodies (%b) survive intact. --name-status appends one line per
 	// changed file after each formatted record.
 	const format = "%H%x1f%aI%x1f%an%x1f%ae%x1f%s%x1f%b%x1e"
-	cmd := exec.Command("git", "-C", repo, "log", "--date=iso-strict",
-		"--no-color", "--name-status", "-M", "--format="+format, "-n", fmt.Sprint(limit))
+	logArgs := []string{"-C", repo, "log", "--date=iso-strict",
+		"--no-color", "--name-status", "-M", "--format=" + format}
+	// git treats a non-positive -n as "show nothing", so omit -n entirely when
+	// unlimited and let git walk the full history.
+	if limit > 0 {
+		logArgs = append(logArgs, "-n", fmt.Sprint(limit))
+	}
+	cmd := exec.Command("git", logArgs...)
 	var stderrBuf strings.Builder
 	cmd.Stderr = &stderrBuf
 	b, err := cmd.Output()
