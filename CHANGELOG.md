@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exists, and how it differs from a generic converter or a live crawler. Added a
   prominent website link, a "What it does" section, a verified quickstart proof
   block, and "Why not ...?" and "What SourceHarvest is not" sections.
+- Added a recorded terminal demo near the top of the `README.md`
+  (`docs/assets/sourceharvest-harvest.svg`, reproducible from the committed
+  `.cast`). It harvests a notes directory and a git repo into
+  `miseledger.adapter.v1` JSONL and shows both outputs share one schema.
 
 ## [0.2.0] - 2026-06-16
 

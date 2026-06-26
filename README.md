@@ -27,6 +27,12 @@ It is the sibling tool to StationTrail:
 
 SourceHarvest is not an archive.
 
+<p align="center">
+  <img src="docs/assets/sourceharvest-harvest.svg" alt="Recording: sourceharvest harvests a notes directory and a git repo, each into miseledger.adapter.v1 JSONL, then one jq over both outputs shows they share a single schema" width="820">
+</p>
+
+Point it at a notes directory and at a git repo. Each source becomes `miseledger.adapter.v1` JSONL, and a single `jq -r .schema` over both outputs returns the one shared schema line.
+
 ## What it does
 
 SourceHarvest is a local source-export adapter: a command-line evidence harvester that reads local files and emits normalized `miseledger.adapter.v1` JSONL. Each reader maps one input shape (line-oriented JSONL, nested JSON, Markdown notes, plain text files, HTML exports, or git history) onto a single adapter record schema, so downstream tools see one consistent format regardless of where the records came from. Records carry stable collections, items, actors, artifacts, links, relations, and raw references, plus content hashes for deduplication. Scanner commands stay strictly local: they read files on disk and never make network calls, and harvested text is treated as untrusted evidence rather than instructions.
