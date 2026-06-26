@@ -1,13 +1,19 @@
-# SourceHarvest
+<h1 align="center">SourceHarvest</h1>
 
-<p>
+<p align="center"><b>Turn local source exports into <code>miseledger.adapter.v1</code> JSONL evidence.</b></p>
+
+<p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/escoffier-labs/sourceharvest/ci.yml?branch=master&style=for-the-badge&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/v/release/escoffier-labs/sourceharvest?style=for-the-badge&label=release" alt="Latest release">
   <img src="https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.22+">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="MIT license">
 </p>
 
-SourceHarvest exports source-system records to `miseledger.adapter.v1` JSONL.
+<p align="center">
+  <a href="https://sourceharvest.escoffierlabs.dev"><b>Website</b></a>
+</p>
+
+SourceHarvest is a local-first Go CLI that normalizes local source exports such as notes, JSON, JSONL, HTML, plain text, and git history into one `miseledger.adapter.v1` JSON object per line. You point it at files you already have on disk so non-agent evidence flows into the same store as your agent-session logs. It differs from a generic file converter by emitting a single stable adapter schema (collections, items, actors, artifacts, links, relations, and raw references) that MiseLedger can dedupe, index, search, and relate.
 
 It is the sibling tool to StationTrail:
 
@@ -16,6 +22,25 @@ It is the sibling tool to StationTrail:
 - [MiseLedger](https://github.com/escoffier-labs/miseledger) stores, dedupes, indexes, searches, relates, and emits evidence bundles.
 
 SourceHarvest is not an archive.
+
+## What it does
+
+SourceHarvest is a local source-export adapter: a command-line evidence harvester that reads local files and emits normalized `miseledger.adapter.v1` JSONL. Each reader maps one input shape (line-oriented JSONL, nested JSON, Markdown notes, plain text files, HTML exports, or git history) onto a single adapter record schema, so downstream tools see one consistent format regardless of where the records came from. Records carry stable collections, items, actors, artifacts, links, relations, and raw references, plus content hashes for deduplication. Scanner commands stay strictly local: they read files on disk and never make network calls, and harvested text is treated as untrusted evidence rather than instructions.
+
+Run a real export against the bundled fixture:
+
+```console
+$ sourceharvest jsonl testdata/generic.fixture.jsonl \
+    --source demo --collection demo:collection --out out.jsonl --json
+{
+  "source": "demo",
+  "path": "testdata/generic.fixture.jsonl",
+  "records": 2,
+  "files": 1,
+  "warnings": [],
+  "generated_at": "2026-06-26T14:57:01Z"
+}
+```
 
 ## How It Works
 
@@ -252,6 +277,21 @@ Or let MiseLedger run SourceHarvest when `sourceharvest` is installed on `PATH`:
 miseledger import sourceharvest markdown ./notes --source notes --collection notes:local --json
 miseledger import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
 ```
+
+## Why not jq, a custom script, or a crawler?
+
+- **Why not `jq` or a one-off script?** Those reshape one input into one ad-hoc output. SourceHarvest emits a single stable `miseledger.adapter.v1` schema across six readers, with content hashes, actors, and raw references already wired, so every source lands in the same evidence shape without per-source glue.
+- **Why not a live crawler?** Crawlers fetch from services over the network. SourceHarvest reads local files only and never makes network calls. It is the adapter that consumes crawler output (`discrawl`, `gitcrawl`, `slacrawl`, and friends) after it has already been exported to disk.
+- **Why not StationTrail?** [StationTrail](https://github.com/escoffier-labs/stationtrail) adapts agent-session harnesses (Codex, Claude, OpenClaw, Hermes). SourceHarvest adapts non-agent source systems: notes, exports, repos, and crawler archives. They emit the same adapter format into the same [MiseLedger](https://github.com/escoffier-labs/miseledger) store.
+- **Why not store it directly in MiseLedger?** MiseLedger stores, dedupes, indexes, searches, and relates. SourceHarvest is the thin local-first layer that turns messy local inputs into the JSONL MiseLedger ingests.
+
+## What SourceHarvest is not
+
+- **Not an archive or a database.** It emits JSONL and exits. Storage, dedupe, indexing, search, and evidence bundles all belong to MiseLedger.
+- **Not a crawler.** It never reaches out to a live service. Scanner commands read local files and make no network calls.
+- **Not an agent-session adapter.** Session logs from Codex, Claude, OpenClaw, and Hermes go through StationTrail, not SourceHarvest.
+- **Not a trust boundary for harvested text.** Exported text is untrusted evidence, normalized and passed through as data, never executed as instructions.
+- **Not a server or GUI.** It is a single local command-line binary with no daemon and no web surface.
 
 ## Boundary
 

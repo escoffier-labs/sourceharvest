@@ -1,0 +1,67 @@
+name: Bug report
+description: Something is broken in SourceHarvest itself, such as a reader, the export writer, the install script, or docs.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you run, and what did you expect versus what you got?
+      placeholder: |
+        I ran `sourceharvest markdown ./notes --source notes --collection notes:local --out -` and got X.
+        I expected Y.
+    validations:
+      required: true
+  - type: dropdown
+    id: reader
+    attributes:
+      label: Reader
+      description: Which subcommand were you using?
+      options:
+        - jsonl
+        - json
+        - markdown
+        - files
+        - html
+        - gitlog
+        - other / not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SourceHarvest version
+      description: Output of `sourceharvest version`.
+      placeholder: sourceharvest 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: go
+    attributes:
+      label: Go version
+      description: Output of `go version` (if you built from source).
+      placeholder: go1.22.2
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: Ubuntu 24.04, macOS 14.5, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Full output
+      description: Paste the full stdout + stderr. Keep enough for us to reproduce.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: scrub
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I have scrubbed any personal hostnames, tokens, account names, and absolute paths from this report.
+          required: true
