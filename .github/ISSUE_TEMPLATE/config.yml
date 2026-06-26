@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: MiseLedger (storage, search, evidence bundles)
+    url: https://github.com/escoffier-labs/miseledger
+    about: SourceHarvest only exports JSONL. If your question is about storing, searching, or relating evidence, that lives in MiseLedger.
+  - name: StationTrail (agent-session adapters)
+    url: https://github.com/escoffier-labs/stationtrail
+    about: For Codex, Claude, OpenClaw, or Hermes session logs, use StationTrail instead of SourceHarvest.
+  - name: Security report
+    url: https://github.com/escoffier-labs/sourceharvest/security/policy
+    about: Do not file security issues publicly. See SECURITY.md.

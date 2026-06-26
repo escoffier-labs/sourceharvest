@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Maintainer-health docs: `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
+  GitHub issue forms (bug and feature) with a contact-links config, and a pull
+  request template with a no-PII / content-guard checkbox.
+
+### Changed
+
+- Reworked the `README.md` opening to lead with what SourceHarvest is, why it
+  exists, and how it differs from a generic converter or a live crawler. Added a
+  prominent website link, a "What it does" section, a verified quickstart proof
+  block, and "Why not ...?" and "What SourceHarvest is not" sections.
+
 ## [0.2.0] - 2026-06-16
 
 ### Added

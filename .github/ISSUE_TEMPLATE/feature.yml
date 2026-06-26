@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest a new reader, flag, or improvement to SourceHarvest.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What local source are you trying to turn into adapter evidence, and what is hard about it today?
+      placeholder: |
+        I have a local export of <thing> and there is no clean way to normalize it into miseledger.adapter.v1 records.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What new reader, flag, or behavior would help? Sketch the command line if you can.
+      placeholder: |
+        Add a `sourceharvest <reader> <path> ...` command that maps <input shape> onto adapter records.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Local input shape
+      description: If proposing a new reader, describe the local file/export shape. A redacted sample helps. Do not paste real private data.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      description: SourceHarvest stays narrow on purpose.
+      options:
+        - label: This reads local files only and needs no network call (live crawling is out of scope).
+          required: true
+        - label: This is an export concern, not storage, search, or serving (those belong in MiseLedger).
+          required: true
