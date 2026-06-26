@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/sourceharvest-social-preview.jpg" alt="SourceHarvest banner" width="900">
+</p>
+
 <h1 align="center">SourceHarvest</h1>
 
 <p align="center"><b>Turn local source exports into <code>miseledger.adapter.v1</code> JSONL evidence.</b></p>
