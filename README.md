@@ -7,14 +7,14 @@
 <p align="center"><b>Turn local source exports into <code>miseledger.adapter.v1</code> JSONL evidence.</b></p>
 
 <p align="center">
+  <a href="https://sourceharvest.escoffierlabs.dev"><b>Website</b></a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/escoffier-labs/sourceharvest/ci.yml?branch=master&style=for-the-badge&label=ci" alt="CI status">
   <img src="https://img.shields.io/github/v/release/escoffier-labs/sourceharvest?style=for-the-badge&label=release" alt="Latest release">
   <img src="https://img.shields.io/badge/go-1.22%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white" alt="Go 1.22+">
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="MIT license">
-</p>
-
-<p align="center">
-  <a href="https://sourceharvest.escoffierlabs.dev"><b>Website</b></a>
 </p>
 
 SourceHarvest is a local-first Go CLI that normalizes local source exports such as notes, JSON, JSONL, HTML, plain text, and git history into one `miseledger.adapter.v1` JSON object per line. You point it at files you already have on disk so non-agent evidence flows into the same store as your agent-session logs. It differs from a generic file converter by emitting a single stable adapter schema (collections, items, actors, artifacts, links, relations, and raw references) that MiseLedger can dedupe, index, search, and relate.
@@ -50,6 +50,81 @@ $ sourceharvest jsonl testdata/generic.fixture.jsonl \
   "warnings": [],
   "generated_at": "2026-06-26T14:57:01Z"
 }
+```
+
+## Build
+
+```bash
+go build -o bin/sourceharvest ./cmd/sourceharvest
+go test ./...
+```
+
+## Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/escoffier-labs/sourceharvest/master/install.sh | sh
+```
+
+Or download a release binary and verify it with `checksums.txt`.
+
+## Usage
+
+Export generic JSONL records:
+
+```bash
+sourceharvest jsonl testdata/generic.fixture.jsonl \
+  --source demo \
+  --collection demo:collection \
+  --out -
+```
+
+Export a Markdown directory as local note evidence:
+
+```bash
+sourceharvest markdown ./notes \
+  --source notes \
+  --collection notes:local \
+  --out -
+```
+
+Export other local source shapes:
+
+```bash
+sourceharvest files ./notes \
+  --source notes \
+  --collection notes:files \
+  --glob "*.md,*.txt" \
+  --out -
+
+sourceharvest html ./site-export \
+  --source docs \
+  --collection docs:html \
+  --out -
+
+sourceharvest gitlog . \
+  --source gitlog \
+  --collection repo:sourceharvest \
+  --out -
+
+sourceharvest json export.json \
+  --source export \
+  --collection export:records \
+  --records-path records \
+  --out -
+```
+
+Pipe into MiseLedger:
+
+```bash
+sourceharvest jsonl export.jsonl --source notes --collection notes:local --out - | miseledger import adapter -
+sourceharvest markdown ./notes --source notes --collection notes:local --out - | miseledger import adapter -
+```
+
+Or let MiseLedger run SourceHarvest when `sourceharvest` is installed on `PATH`:
+
+```bash
+miseledger import sourceharvest markdown ./notes --source notes --collection notes:local --json
+miseledger import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
 ```
 
 ## How It Works
@@ -200,21 +275,6 @@ Current crawler families to support through local adapters:
 
 These adapters should be added only from real local schemas or redacted sample exports. SourceHarvest scanner commands must stay local-only and must not make network calls.
 
-## Build
-
-```bash
-go build -o bin/sourceharvest ./cmd/sourceharvest
-go test ./...
-```
-
-## Install
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/escoffier-labs/sourceharvest/master/install.sh | sh
-```
-
-Or download a release binary and verify it with `checksums.txt`.
-
 ## Readers
 
 Each reader turns one local input shape into `miseledger.adapter.v1` records.
@@ -227,66 +287,6 @@ Each reader turns one local input shape into `miseledger.adapter.v1` records.
 | `files` | plain text files | One file record per match; filter by `--glob`. |
 | `html` | `.html` / `.htm` files | Strips scripts, styles, and tags; title from `<title>` or file name. |
 | `gitlog` | a local git repo | One event record per commit (subject + body in text, author email on the actor, changed files as `file` artifacts); an empty repo emits zero records. |
-
-## Usage
-
-Export generic JSONL records:
-
-```bash
-sourceharvest jsonl testdata/generic.fixture.jsonl \
-  --source demo \
-  --collection demo:collection \
-  --out -
-```
-
-Export a Markdown directory as local note evidence:
-
-```bash
-sourceharvest markdown ./notes \
-  --source notes \
-  --collection notes:local \
-  --out -
-```
-
-Export other local source shapes:
-
-```bash
-sourceharvest files ./notes \
-  --source notes \
-  --collection notes:files \
-  --glob "*.md,*.txt" \
-  --out -
-
-sourceharvest html ./site-export \
-  --source docs \
-  --collection docs:html \
-  --out -
-
-sourceharvest gitlog . \
-  --source gitlog \
-  --collection repo:sourceharvest \
-  --out -
-
-sourceharvest json export.json \
-  --source export \
-  --collection export:records \
-  --records-path records \
-  --out -
-```
-
-Pipe into MiseLedger:
-
-```bash
-sourceharvest jsonl export.jsonl --source notes --collection notes:local --out - | miseledger import adapter -
-sourceharvest markdown ./notes --source notes --collection notes:local --out - | miseledger import adapter -
-```
-
-Or let MiseLedger run SourceHarvest when `sourceharvest` is installed on `PATH`:
-
-```bash
-miseledger import sourceharvest markdown ./notes --source notes --collection notes:local --json
-miseledger import sourceharvest gitlog . --source gitlog --collection repo:sourceharvest --json
-```
 
 ## Why not jq, a custom script, or a crawler?
 
